@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Download
+Bundle-SymbolicName: com.hhc.sy.customs.download;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: HHC
+Require-Bundle: org.eclipse.ui,
+ com.teamcenter.rac.aifrcp;bundle-version="12000.4.0",
+ com.teamcenter.rac.kernel;bundle-version="12000.4.0",
+ com.teamcenter.rac.common;bundle-version="12000.4.0",
+ com.teamcenter.rac.util;bundle-version="12000.4.0"
+Automatic-Module-Name: com.hhc.sy.customs.download
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-ClassPath: lib/swing2swt.jar,
+ .
+Export-Package: com.hhc.sy.customs.download.handlers

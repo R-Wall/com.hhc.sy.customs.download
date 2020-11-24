@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            id="com.hhc.sy.customs.download.commands.category"
+            name="下载">
+      </category>
+      <command
+            categoryId="com.hhc.sy.customs.download.commands.category"
+            name="文档模板下载"
+            id="com.hhc.sy.customs.download.commands.DownloadDatasetsCommand">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="com.hhc.sy.customs.download.handlers.DownloadDatasetsHandler"
+            commandId="com.hhc.sy.customs.download.commands.DownloadDatasetsCommand">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="com.hhc.sy.customs.download.commands.DownloadDatasetsCommand"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            contextId="org.eclipse.ui.contexts.window"
+            sequence="M1+6">
+      </key>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="menu:org.eclipse.ui.main.menu?after=additions">
+         <menu
+               id="com.hhc.sy.customs.download.menus.sampleMenu"
+               label="下载"
+               mnemonic="M">
+            <command
+                  commandId="com.hhc.sy.customs.download.commands.DownloadDatasetsCommand"
+                  id="com.hhc.sy.customs.download.menus.sampleCommand"
+                  mnemonic="S">
+            </command>
+         </menu>
+      </menuContribution>
+   </extension>
+      <!-- 右键菜单 -->
+   <extension
+         point="org.eclipse.ui.menus">
+   <menuContribution
+            locationURI="popup:org.eclipse.ui.popup.any?after=additions">
+            <command
+                  commandId="com.hhc.sy.customs.download.commands.DownloadDatasetsCommand">
+           	</command>
+     </menuContribution>    
+   </extension>
+
+</plugin>
