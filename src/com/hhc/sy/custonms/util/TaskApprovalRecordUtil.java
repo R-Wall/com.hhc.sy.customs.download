@@ -62,7 +62,7 @@ public class TaskApprovalRecordUtil {
 			taskFolder = createFolder(session, folderType, "流程审批记录", "流程审批记录");
 			taskInbox.setReferenceProperty(property_folder, taskFolder);
 		}
-//		refreshFolder(taskFolder);
+		refreshFolder(taskFolder);
 	}
 	
 	public void refreshFolders(InterfaceAIFComponent[] coms) throws TCException {
