@@ -15,5 +15,4 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: lib/swing2swt.jar,
  .
 Export-Package: com.hhc.sy.customs.download.handlers,
- com.hhc.sy.custonms.util,
- com.teamcenter.rac.commands.refresh
+ com.hhc.sy.custonms.util
