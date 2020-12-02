@@ -1,6 +1,5 @@
 package com.teamcenter.rac.commands.refresh;
 
-import com.hhc.sy.custonms.util.CustomRefreshAdapter;
 import com.hhc.sy.custonms.util.TaskApprovalRecordUtil;
 import com.teamcenter.rac.aif.AbstractAIFOperation;
 import com.teamcenter.rac.aif.kernel.InterfaceAIFComponent;
@@ -31,11 +30,6 @@ public class RefreshOperation
   
 	public void executeOperation() throws Exception {
 		try {
-			
-			CustomRefreshAdapter.executeConditipon();
-			
-			CustomRefreshAdapter.executePre();
-			
 			if ((this.m_target instanceof TCComponent)) {
 				((TCComponent) this.m_target).refresh();
 			}
@@ -56,9 +50,6 @@ public class RefreshOperation
 			if (this.m_theTargets != null) {
 				util.refreshFolders(m_theTargets);
 			}
-			
-			CustomRefreshAdapter.executePost();
-			
 		} catch (Exception localException) {
 			Object localObject = new MessageBox(localException);
 			((MessageBox) localObject).setModal(true);
