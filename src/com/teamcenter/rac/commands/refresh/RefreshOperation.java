@@ -1,5 +1,7 @@
 package com.teamcenter.rac.commands.refresh;
 
+import com.hhc.sy.custonms.util.CustomRefreshAdapter;
+import com.hhc.sy.custonms.util.TaskApprovalRecordUtil;
 import com.teamcenter.rac.aif.AbstractAIFOperation;
 import com.teamcenter.rac.aif.kernel.InterfaceAIFComponent;
 import com.teamcenter.rac.kernel.TCComponent;
@@ -27,37 +29,40 @@ public class RefreshOperation
     this.m_theTargets = paramArrayOfInterfaceAIFComponent;
   }
   
-  public void executeOperation()
-    throws Exception
-  {
-    try
-    {
-      if ((this.m_target instanceof TCComponent)) {
-        ((TCComponent)this.m_target).refresh();
-      }
-      if (this.m_theTargets != null)
-      {
-        ArrayList localArrayList = new ArrayList();
-        for (Object object : m_theTargets) {
-			if (object instanceof TCComponent) {
-				 localArrayList.add((TCComponent)object);
+	public void executeOperation() throws Exception {
+		try {
+			
+			CustomRefreshAdapter.executeConditipon();
+			
+			CustomRefreshAdapter.executePre();
+			
+			if ((this.m_target instanceof TCComponent)) {
+				((TCComponent) this.m_target).refresh();
 			}
+			if (this.m_theTargets != null) {
+				ArrayList localArrayList = new ArrayList();
+				for (Object object : m_theTargets) {
+					if (object instanceof TCComponent) {
+						localArrayList.add((TCComponent) object);
+					}
+				}
+				TCComponentType.refresh(localArrayList);
+			}
+
+			TaskApprovalRecordUtil util = new TaskApprovalRecordUtil();
+			if (this.m_target != null) {
+				util.refreshFolder(this.m_target);
+			}
+			if (this.m_theTargets != null) {
+				util.refreshFolders(m_theTargets);
+			}
+			
+			CustomRefreshAdapter.executePost();
+			
+		} catch (Exception localException) {
+			Object localObject = new MessageBox(localException);
+			((MessageBox) localObject).setModal(true);
+			((MessageBox) localObject).setVisible(true);
 		}
-        TCComponentType.refresh(localArrayList);
-      }
-    }
-    catch (Exception localException)
-    {
-      Object localObject = new MessageBox(localException);
-      ((MessageBox)localObject).setModal(true);
-      ((MessageBox)localObject).setVisible(true);
-    }
-    TaskApprovalRecordUtil util = new TaskApprovalRecordUtil();
-    if (this.m_target != null) {
-    	util.refreshFolder(this.m_target);
 	}
-    if (this.m_theTargets != null) {
-    	util.refreshFolders(m_theTargets);
-	}
-  }
 }
