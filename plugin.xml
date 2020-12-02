@@ -2,7 +2,7 @@
 <?eclipse version="3.4"?>
 <plugin>
    <extension point="org.eclipse.ui.startup">
-         <startup class="com.teamcenter.rac.commands.refresh.CustomStarter"/>
+         <startup class="com.hhc.sy.customs.download.handlers.CustomStarter"/>
    </extension>
    <extension
          point="org.eclipse.ui.commands">
