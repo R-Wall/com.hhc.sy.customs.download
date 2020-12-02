@@ -1,4 +1,4 @@
-package com.teamcenter.rac.commands.refresh;
+package com.hhc.sy.custonms.util;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -10,6 +10,7 @@ import com.teamcenter.rac.aif.kernel.InterfaceAIFComponent;
 import com.teamcenter.rac.aifrcp.AIFUtility;
 import com.teamcenter.rac.kernel.TCComponent;
 import com.teamcenter.rac.kernel.TCComponentFolder;
+import com.teamcenter.rac.kernel.TCComponentTaskInBox;
 import com.teamcenter.rac.kernel.TCException;
 import com.teamcenter.rac.kernel.TCPreferenceService;
 import com.teamcenter.rac.kernel.TCSession;
@@ -17,6 +18,14 @@ import com.teamcenter.services.loose.core.DataManagementService;
 import com.teamcenter.services.loose.core._2008_06.DataManagement.CreateIn;
 import com.teamcenter.services.loose.core._2008_06.DataManagement.CreateResponse;
 
+/**
+ * 刷新操作调用本方法执行流程审批记录逻辑
+ * 本方法的调用需：
+ * 1.替换com.teamcenter.rac.common包中的RefreshOperation类(替换类在本包)
+ * 2.修改com.teamcenter.rac.common包中的MANIFEST.MF文件，在Require-Bundle:后添加com.hhc.sy.customs.download;bundle-version="1.0.0"
+ * @author DEVE
+ *
+ */
 public class TaskApprovalRecordUtil {
 
 	TCSession session;
@@ -45,14 +54,14 @@ public class TaskApprovalRecordUtil {
 		preerenceService = session.getPreferenceService();
 	}
 	
-	public void init() throws Exception {
-		TCComponent taskinbox = (TCComponent) session.getUser().getUserInBox().getChildren()[0].getComponent();
-		TCComponentFolder root = (TCComponentFolder) taskinbox.getReferenceProperty(property_folder);
-		if (root == null) {
-			root = createFolder(session, folderType, "流程审批记录", "");
-			taskinbox.add(property_folder, root);
+	public void refreshTaskInbox(TCComponentTaskInBox taskInbox) throws TCException {
+		System.out.println("任务箱数据更新[" + taskInbox + "]");
+		TCComponentFolder taskFolder = (TCComponentFolder) taskInbox.getReferenceProperty(property_folder);
+		if (taskFolder == null || !"流程审批记录".equals(taskFolder.getProperty(property_type))) {
+			taskFolder = createFolder(session, folderType, "流程审批记录", "流程审批记录");
+			taskInbox.setReferenceProperty(property_folder, taskFolder);
 		}
-		refreshTasksCompleteFolder(root);
+//		refreshFolder(taskFolder);
 	}
 	
 	public void refreshFolders(InterfaceAIFComponent[] coms) throws TCException {
@@ -64,6 +73,10 @@ public class TaskApprovalRecordUtil {
 	}
 	
 	public void refreshFolder(InterfaceAIFComponent com) throws TCException {
+		if (com instanceof TCComponentTaskInBox) {
+			refreshTaskInbox((TCComponentTaskInBox) com);
+			return;
+		} 
 		if (com instanceof TCComponentFolder) {
 			refreshFolder((TCComponentFolder) com);
 		}
@@ -87,6 +100,7 @@ public class TaskApprovalRecordUtil {
 				break;
 			case "项目":
 				refreshProjectFolder(folder);
+				break;
 			case "标准制修订":
 				refreshStandardFolder(folder);
 				break;
@@ -99,10 +113,10 @@ public class TaskApprovalRecordUtil {
 		}
 	}
 	
-	// 1. 更新流程审批记录文件夹下结构
+	// 更新流程审批记录文件夹下结构
 	public void refreshTasksCompleteFolder(TCComponentFolder folder) throws TCException {
 		
-		System.out.println("refreshTasksCompleteFolder[" + folder + "]");
+		System.out.println("流程审批记录数据更新[" + folder + "]");
 		
 		//获取今天文件夹
 		TCComponentFolder today = (TCComponentFolder) folder.getReferenceProperty(property_today);
@@ -182,14 +196,8 @@ public class TaskApprovalRecordUtil {
 	// 更新年份数据内容
 	public void refreshYearFolder(TCComponentFolder folder) throws TCException {
 		
-		System.out.println("refreshYearFolder[" + folder + "]");
+		System.out.println("年份数据更新[" + folder + "]");
 		int year = folder.getIntProperty(property_year);
-		System.out.println(year + "年份数据更新");
-		int project_defult_num = preerenceService.getIntegerValue(PROJECT_DEFAULT_MUN);
-		int project_max_num = preerenceService.getIntegerValue(PROJECT_MAX_MUN);
-		if (project_max_num < project_defult_num) {
-			project_defult_num = project_max_num;
-		}
 		
 		// 获取标准制修订文件夹
 		TCComponentFolder standard = (TCComponentFolder) folder.getReferenceProperty(property_standard);
@@ -231,8 +239,13 @@ public class TaskApprovalRecordUtil {
 		String[] enters = new String[] {"创建时间大于", "创建时间小于"};
 		String[] values = new String[] {year + "-1-01 00:00", (year + 1) + "-1-01 00:00"};
 		TCComponent[] projects = queryProjects(enters, values);
-		if (project_max_num < projects.length) {
+		int project_defult_num = preerenceService.getIntegerValue(PROJECT_DEFAULT_MUN);
+		int project_max_num = preerenceService.getIntegerValue(PROJECT_MAX_MUN);
+		if (project_max_num > projects.length) {
 			project_max_num = projects.length;
+		}
+		if (project_max_num < project_defult_num) {
+			project_defult_num = project_max_num;
 		}
 		TCComponentFolder[] more_projects = new TCComponentFolder[project_max_num];
 		TCComponentFolder projectFolder = null;
@@ -264,6 +277,7 @@ public class TaskApprovalRecordUtil {
 	
 	// 刷新今天文件夹数据
 	public void refreshTodayFolder(TCComponentFolder folder) throws TCException {
+		System.out.println("今天数据更新[" + folder + "]");
 		Date date = new Date();
 		calendar.setTime(date);
 		Date start = calendar.getTime();
@@ -277,6 +291,7 @@ public class TaskApprovalRecordUtil {
 	
 	// 刷新项目文件夹数据
 	public void refreshProjectFolder(TCComponentFolder folder) throws TCException {
+		System.out.println("项目数据更新[" + folder + "]");
 		int year = folder.getIntProperty(property_year);
 		String[] enters = new String[]{"用户ID","任务类型","任务开始时间大于","任务开始时间小于"};
 		String[] values = new String[]{user_id,"DoTask;ReviewTask",year + "-1-01 00:00", (year + 1) + "-1-01 00:00"};
@@ -286,6 +301,7 @@ public class TaskApprovalRecordUtil {
 	
 	// 刷新标准制修订文件夹数据
 	public void refreshStandardFolder(TCComponentFolder folder) throws TCException {
+		System.out.println("标准制修订数据更新[" + folder + "]");
 		int year = folder.getIntProperty(property_year);
 		String[] enters = new String[]{"用户ID","任务类型","任务开始时间大于","任务开始时间小于"};
 		String[] values = new String[]{user_id,"DoTask;ReviewTask",year + "-1-01 00:00", (year + 1) + "-1-01 00:00"};
@@ -295,6 +311,7 @@ public class TaskApprovalRecordUtil {
 	
 	// 刷新其他流程文件夹数据
 	public void refreshOtherFolder(TCComponentFolder folder) throws TCException {
+		System.out.println("其他流程数据更新[" + folder + "]");
 		int year = folder.getIntProperty(property_year);
 		String[] enters = new String[]{"用户ID","任务类型","任务开始时间大于","任务开始时间小于"};
 		String[] values = new String[]{user_id,"DoTask;ReviewTask",year + "-1-01 00:00", (year + 1) + "-1-01 00:00"};
@@ -333,7 +350,7 @@ public class TaskApprovalRecordUtil {
 	
 	// 刷新更多文件夹数据
 	public void refreshMoreFolder(TCComponentFolder more) throws TCException {
-		TCComponent folder = more.getReferenceProperty(property_more);
+		TCComponent folder = more.getReferenceProperty(property_parent);
 		if (folder != null && folder instanceof TCComponentFolder) {
 			refreshFolder((TCComponentFolder) folder);
 		}
@@ -341,54 +358,59 @@ public class TaskApprovalRecordUtil {
 	
 	// 查询项目
 	public TCComponent[] queryProjects(String[] enters, String[] values) throws TCException {
-		try {
-			TCComponent[] projects = session.search("SY6_Projects", enters, values);
-			return projects;
-		} catch (Exception e) {
-			throw new TCException(e);
-		}
+		return new TCComponent[0];
+//		try {
+//			TCComponent[] projects = session.search("SY6_Projects", enters, values);
+//			return projects;
+//		} catch (Exception e) {
+//			throw new TCException(e);
+//		}
 	}
 	
 	// 查询其他流程任务
 	public TCComponent[] queryOtherTasks(String[] enters, String[] values) throws TCException {
-		try {
-			TCComponent[] projects = session.search("SY6_OtherTasks", enters, values);
-			return projects;
-		} catch (Exception e) {
-			throw new TCException(e);
-		}
+		return new TCComponent[0];
+//		try {
+//			TCComponent[] projects = session.search("SY6_OtherTasks", enters, values);
+//			return projects;
+//		} catch (Exception e) {
+//			throw new TCException(e);
+//		}
 	}
 	
 	// 查询标准制修订流程任务
 	public TCComponent[] queryStandardTasks(String[] enters, String[] values) throws TCException {
-		try {
-			TCComponent[] projects = session.search("SY6_Standard", enters, values);
-			return projects;
-		} catch (Exception e) {
-			throw new TCException(e);
-		}
+		return new TCComponent[0];
+//		try {
+//			TCComponent[] projects = session.search("SY6_Standard", enters, values);
+//			return projects;
+//		} catch (Exception e) {
+//			throw new TCException(e);
+//		}
 	}
 	
 	// 查询项目流程任务
 	public TCComponent[] queryProjectTasks(String[] enters, String[] values) throws TCException {
-		try {
-			TCComponent[] reviewTasks = session.search("SY6_ProjectTasks", enters, values);
-			TCComponent[] doTasks = session.search("SY6_ProjectTasks", enters, values);
-			return concatComs(reviewTasks, doTasks);
-		} catch (Exception e) {
-			throw new TCException(e);
-		}
+		return new TCComponent[0];
+//		try {
+//			TCComponent[] reviewTasks = session.search("SY6_ProjectTasks", enters, values);
+//			TCComponent[] doTasks = session.search("SY6_ProjectTasks", enters, values);
+//			return concatComs(reviewTasks, doTasks);
+//		} catch (Exception e) {
+//			throw new TCException(e);
+//		}
 	}
 	
 	// 查询今天的任务
 	public TCComponent[] queryTodayTasks(String[] enters, String[] values) throws TCException {
-		try {
-			TCComponent[] reviewTasks = session.search("SY6_TodayTasks", enters, values);
-			TCComponent[] doTasks = session.search("SY6_TodayTasks", enters, values);
-			return concatComs(reviewTasks, doTasks);
-		} catch (Exception e) {
-			throw new TCException(e);
-		}
+		return new TCComponent[0];
+//		try {
+//			TCComponent[] reviewTasks = session.search("SY6_TodayTasks", enters, values);
+//			TCComponent[] doTasks = session.search("SY6_TodayTasks", enters, values);
+//			return concatComs(reviewTasks, doTasks);
+//		} catch (Exception e) {
+//			throw new TCException(e);
+//		}
 	}
 	
 	// 数组合并
