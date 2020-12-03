@@ -1,5 +1,6 @@
 package com.hhc.sy.custonms.util;
 
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -8,6 +9,7 @@ import java.util.Map;
 
 import com.teamcenter.rac.aif.kernel.InterfaceAIFComponent;
 import com.teamcenter.rac.aifrcp.AIFUtility;
+import com.teamcenter.rac.commands.refresh.RefreshOperation;
 import com.teamcenter.rac.kernel.TCComponent;
 import com.teamcenter.rac.kernel.TCComponentFolder;
 import com.teamcenter.rac.kernel.TCComponentTaskInBox;
@@ -55,6 +57,31 @@ public class TaskApprovalRecordUtil {
 		preerenceService = session.getPreferenceService();
 	}
 	
+	public void customRefresh(RefreshOperation operation) throws Exception {
+		Class<?> cls = operation.getClass();
+		Field[] fields = cls.getDeclaredFields();
+		InterfaceAIFComponent m_target = null;
+		InterfaceAIFComponent[] m_theTargets = null;
+		for (Field field : fields) {
+            field.setAccessible(true);
+            String name = field.getName();
+            if ("m_target".equals(name)) {
+            	m_target = (InterfaceAIFComponent) field.get(operation);
+			} else if ("m_theTargets".equals(name)) {
+				m_theTargets = (InterfaceAIFComponent[]) field.get(operation);
+			}
+		}
+		
+		if (m_target != null) {
+			refreshFolder(m_target);
+		}
+		
+		if (m_theTargets != null) {
+			refreshFolders(m_theTargets);
+		}
+		 
+	}
+	
 	public void refreshTaskInbox(TCComponentTaskInBox taskInbox) throws TCException {
 		System.out.println("任务箱数据更新[" + taskInbox + "]");
 		TCComponentFolder taskFolder = (TCComponentFolder) taskInbox.getReferenceProperty(property_folder);
@@ -62,7 +89,7 @@ public class TaskApprovalRecordUtil {
 			taskFolder = createFolder(session, folderType, "流程审批记录", "流程审批记录");
 			taskInbox.setReferenceProperty(property_folder, taskFolder);
 		}
-		refreshFolder(taskFolder);
+//		refreshFolder(taskFolder);
 	}
 	
 	public void refreshFolders(InterfaceAIFComponent[] coms) throws TCException {
