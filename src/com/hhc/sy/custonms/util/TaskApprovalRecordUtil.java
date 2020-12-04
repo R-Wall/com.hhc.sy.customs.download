@@ -158,7 +158,7 @@ public class TaskApprovalRecordUtil {
 		}
 		refreshTodayFolder(today);
 		
-		// 获取更多文件夹
+		// 获取更多年份文件夹
 		TCComponentFolder more = (TCComponentFolder) folder.getReferenceProperty(property_more);
 		if (more == null || !"更多".equals(more.getProperty(property_type))) {
 			more = createFolder(session, folderType, "更多", "更多", null);
@@ -167,7 +167,9 @@ public class TaskApprovalRecordUtil {
 		}
 		
 		// 更新更多文件夹内容
-		TCComponent[] dates = more.getReferenceListProperty(property_contents);
+		TCComponent[] more_years = more.getReferenceListProperty(property_contents);
+		TCComponent[] default_years = folder.getReferenceListProperty(property_contents);
+		TCComponent[] dates = concatComs(default_years, more_years);
 		Map<Integer, TCComponentFolder> dateFolders = new HashMap<>();
 		for (TCComponent dateCom : dates) {
 			if (folderType.equals(dateCom.getType())) {
@@ -184,33 +186,42 @@ public class TaskApprovalRecordUtil {
 		if (years > 10) {
 			years = 10;
 		}
-		TCComponentFolder[] more_folders = new TCComponentFolder[years];
+		// 更新内容文件夹
+		int default_year = 3;
+		if (years < 3) {
+			default_year = years;
+		}
+				
+		TCComponentFolder[] all_years = new TCComponentFolder[years];
 		for (int i = 0; i < years; i++) {
 			TCComponentFolder dateFolder = dateFolders.get(endYear);
 			if (dateFolder == null) {
 				dateFolder = createFolder(session, folderType, endYear + "年", "年份",endYear);
 				dateFolder.setIntProperty("s7_year", endYear);
 			}
-			more_folders[i] = dateFolder;
+			all_years[i] = dateFolder;
 			calendar.add(Calendar.YEAR, -1); // 年份-1
 			endYear = calendar.get(Calendar.YEAR);
 		}
-		more.setRelated(property_contents,more_folders);
 		
-		// 更新内容文件夹
-		int default_year = 3;
-		if (years < 3) {
-			default_year = years;
+		more_years = new TCComponentFolder[years - default_year];
+		for (int i = 0; i < more_years.length; i++) {
+			more_years[i] = all_years[i + default_year];
 		}
+		if (more_years != null && more_years.length > 0) {
+			more.setRelated(property_contents,more_years);
+		}
+		
+		
 		TCComponentFolder[] contents = new TCComponentFolder[default_year];
 		for (int i = 0; i < contents.length; i++) {
-			contents[i] = more_folders[i];
+			contents[i] = all_years[i];
 		}
 		folder.setRelated(property_contents, contents);
 		
 		// 更新年份文件夹内容
-		for (int i = 0; i < more_folders.length; i++) {
-			refreshYearFolder(more_folders[i]);
+		for (int i = 0; i < all_years.length; i++) {
+			refreshYearFolder(all_years[i]);
 		}
 	}
 	
@@ -255,7 +266,9 @@ public class TaskApprovalRecordUtil {
 		}
 				
 		// 更新更多文件夹内容
-		TCComponent[] dates = project_more.getReferenceListProperty(property_contents);
+		TCComponent[] default_projects = folder.getReferenceListProperty(property_contents);
+		TCComponent[] more_projects = folder.getReferenceListProperty(property_contents);
+		TCComponent[] dates = concatComs(default_projects, more_projects);
 		Map<String, TCComponentFolder> project_folders = new HashMap<>();
 		for (TCComponent dateCom : dates) {
 			String type =dateCom.getProperty(property_type);
@@ -282,7 +295,7 @@ public class TaskApprovalRecordUtil {
 		if (project_max_num < project_defult_num) {
 			project_defult_num = project_max_num;
 		}
-		TCComponentFolder[] more_projects = new TCComponentFolder[project_max_num];
+		TCComponentFolder[] all_projects = new TCComponentFolder[project_max_num];
 		TCComponentFolder projectFolder = null;
 		for (int i = 0; i < project_max_num; i++) {
 			TCComponent project = projects.get(i);
@@ -292,19 +305,23 @@ public class TaskApprovalRecordUtil {
 				projectFolder = createFolder(session, folderType, name,"项目", null);
 				projectFolder.setIntProperty(property_year, year);
 			}
-			more_projects[i] = projectFolder;
+			all_projects[i] = projectFolder;
+		}
+		more_projects = new TCComponent[project_max_num - project_defult_num];
+		for (int i = 0; i < more_projects.length; i++) {
+			more_projects[i] = all_projects[i + project_defult_num];
 		}
 		project_more.setRelated(property_contents,more_projects);
 
 		// 存储默认显示项目夹数据
 		TCComponentFolder[] contents = new TCComponentFolder[project_defult_num];
 		for (int i = 0; i < contents.length; i++) {
-			contents[i] = more_projects[i];
+			contents[i] = all_projects[i];
 		}
 		folder.setRelated(property_contents,contents);
 
 		for (int i = 0; i < more_projects.length; i++) {
-			refreshProjectFolder(more_projects[i]);
+			refreshProjectFolder(all_projects[i]);
 		}
 				
 	}
@@ -377,9 +394,9 @@ public class TaskApprovalRecordUtil {
 			more.setReferenceProperty(property_parent, folder);
 			folder.setReferenceProperty(property_more, more);
 		}
-		TCComponent[] tasks_more = new TCComponent[task_max_num];
+		TCComponent[] tasks_more = new TCComponent[task_max_num - task_defult_num];
 		for (int i = 0; i < tasks_more.length; i++) {
-			tasks_more[i] = tasks.get(i);
+			tasks_more[i] = tasks.get(i + task_defult_num);
 		}
 		more.setRelated(property_contents, tasks_more);
 		
