@@ -2,8 +2,8 @@ package com.hhc.sy.customs.download.handlers;
 
 import org.eclipse.ui.IStartup;
 
+import com.hhc.sy.custonms.util.TaskApprovalRecordUtil;
 import com.teamcenter.rac.aifrcp.AIFUtility;
-import com.teamcenter.rac.commands.refresh.TaskApprovalRecordUtil;
 import com.teamcenter.rac.kernel.TCComponent;
 import com.teamcenter.rac.kernel.TCComponentTaskInBox;
 import com.teamcenter.rac.kernel.TCSession;

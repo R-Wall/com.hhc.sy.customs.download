@@ -1,4 +1,4 @@
-package com.teamcenter.rac.commands.refresh;
+package com.hhc.sy.custonms.util;
 
 import java.lang.reflect.Field;
 import java.math.BigInteger;
@@ -13,6 +13,7 @@ import java.util.Map;
 
 import com.teamcenter.rac.aif.kernel.InterfaceAIFComponent;
 import com.teamcenter.rac.aifrcp.AIFUtility;
+import com.teamcenter.rac.commands.refresh.RefreshOperation;
 import com.teamcenter.rac.kernel.TCComponent;
 import com.teamcenter.rac.kernel.TCComponentFolder;
 import com.teamcenter.rac.kernel.TCComponentTaskInBox;
@@ -187,9 +188,6 @@ public class TaskApprovalRecordUtil {
 			startYear = 2016;
 		}
 		int years = endYear - startYear + 1;
-		if (years > 10) {
-			years = 10;
-		}
 		// 更新内容文件夹
 		int default_year = 3;
 		if (years < 3) {
@@ -212,10 +210,7 @@ public class TaskApprovalRecordUtil {
 		for (int i = 0; i < more_years.length; i++) {
 			more_years[i] = all_years[i + default_year];
 		}
-		if (more_years != null && more_years.length > 0) {
-			more.setRelated(property_contents,more_years);
-		}
-		
+		more.setRelated(property_contents,more_years);
 		
 		TCComponentFolder[] contents = new TCComponentFolder[default_year];
 		for (int i = 0; i < contents.length; i++) {
