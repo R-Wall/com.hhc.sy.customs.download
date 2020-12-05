@@ -1,4 +1,4 @@
-package com.hhc.sy.custonms.util;
+package com.teamcenter.rac.commands.refresh;
 
 import java.lang.reflect.Field;
 import java.math.BigInteger;
@@ -13,7 +13,6 @@ import java.util.Map;
 
 import com.teamcenter.rac.aif.kernel.InterfaceAIFComponent;
 import com.teamcenter.rac.aifrcp.AIFUtility;
-import com.teamcenter.rac.commands.refresh.RefreshOperation;
 import com.teamcenter.rac.kernel.TCComponent;
 import com.teamcenter.rac.kernel.TCComponentFolder;
 import com.teamcenter.rac.kernel.TCComponentTaskInBox;

@@ -1,6 +1,5 @@
 package com.teamcenter.rac.commands.refresh;
 
-import com.hhc.sy.custonms.util.TaskApprovalRecordUtil;
 import com.teamcenter.rac.aif.AbstractAIFOperation;
 import com.teamcenter.rac.aif.kernel.InterfaceAIFComponent;
 import com.teamcenter.rac.kernel.TCComponent;
