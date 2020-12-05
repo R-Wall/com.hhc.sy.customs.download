@@ -19,6 +19,7 @@ import com.teamcenter.rac.kernel.TCComponentFolder;
 import com.teamcenter.rac.kernel.TCComponentTaskInBox;
 import com.teamcenter.rac.kernel.TCException;
 import com.teamcenter.rac.kernel.TCPreferenceService;
+import com.teamcenter.rac.kernel.TCPreferenceService.TCPreferenceLocation;
 import com.teamcenter.rac.kernel.TCSession;
 import com.teamcenter.services.loose.core.DataManagementService;
 import com.teamcenter.services.loose.core._2008_06.DataManagement.CreateIn;
@@ -35,14 +36,14 @@ import com.teamcenter.services.loose.core._2008_06.DataManagement.CreateResponse
 public class TaskApprovalRecordUtil {
 
 	TCSession session;
-	TCPreferenceService preerenceService;
+	TCPreferenceService preferenceService;
 	String user_id;
 	String task_types = "EPMPerformSignoffTask;EPMDoTask;EPMConditionTask";
 	Calendar calendar = Calendar.getInstance();
-	String PROJECT_DEFAULT_MUN = "PROJECT_DEFAULT_MUN";
-	String PROJECT_MAX_MUN = "PROJECT_MAX_MUN";
-	String TASK_DEFAULT_MUN = "TASK_DEFAULT_MUN";
-	String TASK_MAX_MUN = "TASK_MAX_MUN";
+	public static String PROJECT_DEFAULT_MUN = "PROJECT_DEFAULT_MUN";
+	public static String PROJECT_MORE_MUN = "PROJECT_MORE_MUN";
+	public static String TASK_DEFAULT_MUN = "TASK_DEFAULT_MUN";
+	public static String TASK_MORE_MUN = "TASK_MORE_MUN";
 	String property_folder = "sy6_task_folder"; // TypeReference/S7_CustomFolder
 	String folderType = "SY6_TaskFolder";
 	String property_type = "sy6_type"; // String 类型
@@ -58,7 +59,7 @@ public class TaskApprovalRecordUtil {
 	public TaskApprovalRecordUtil() throws TCException {
 		session = (TCSession) AIFUtility.getDefaultSession();
 		user_id = session.getUser().getUserId();
-		preerenceService = session.getPreferenceService();
+		preferenceService = session.getPreferenceService();
 	}
 	
 	public void customRefresh(RefreshOperation operation) throws Exception {
@@ -83,7 +84,7 @@ public class TaskApprovalRecordUtil {
 		if (m_theTargets != null) {
 			refreshFolders(m_theTargets);
 		}
-		 
+		System.out.println("customRefresh Comptete.");
 	}
 	
 	public void refreshTaskInbox(TCComponentTaskInBox taskInbox) throws TCException {
@@ -281,23 +282,20 @@ public class TaskApprovalRecordUtil {
 		String[] enters = new String[] {"创建时间晚于", "创建时间早于"};
 		String[] values = new String[] {year + "-1-01 00:00", (year + 1) + "-1-01 00:00"};
 		List<TCComponent> projects = queryProjects(enters, values);
-		Integer project_defult_num = preerenceService.getIntegerValue(PROJECT_DEFAULT_MUN);
-		if(project_defult_num == null){
-			project_defult_num = 3;
+		Integer project_defult_num = getPreferenceIntegerValue(PROJECT_DEFAULT_MUN, 3);
+		Integer project_more_num = getPreferenceIntegerValue(PROJECT_MORE_MUN, 10);
+		if(project_defult_num > projects.size()){
+			project_defult_num = projects.size();
 		}
-		Integer project_max_num = preerenceService.getIntegerValue(PROJECT_MAX_MUN);
-		if(project_max_num == null){
-			project_defult_num = 10;
+		int all_projects_num = projects.size();
+		if (projects.size() > project_more_num + project_defult_num) {
+			all_projects_num = project_more_num + project_defult_num;
 		}
-		if (project_max_num > projects.size()) {
-			project_max_num = projects.size();
-		}
-		if (project_max_num < project_defult_num) {
-			project_defult_num = project_max_num;
-		}
-		TCComponentFolder[] all_projects = new TCComponentFolder[project_max_num];
+		project_more_num = all_projects_num - project_defult_num;
+		
+		TCComponentFolder[] all_projects = new TCComponentFolder[all_projects_num];
 		TCComponentFolder projectFolder = null;
-		for (int i = 0; i < project_max_num; i++) {
+		for (int i = 0; i < all_projects.length; i++) {
 			TCComponent project = projects.get(i);
 			String name = project.getProperty("project_name");
 			projectFolder = project_folders.get(name);
@@ -307,23 +305,33 @@ public class TaskApprovalRecordUtil {
 			}
 			all_projects[i] = projectFolder;
 		}
-		more_projects = new TCComponent[project_max_num - project_defult_num];
-		for (int i = 0; i < more_projects.length; i++) {
-			more_projects[i] = all_projects[i + project_defult_num];
-		}
-		project_more.setRelated(property_contents,more_projects);
-
-		// 存储默认显示项目夹数据
+		// 存储默认显示项目文件夹数据
 		TCComponentFolder[] contents = new TCComponentFolder[project_defult_num];
 		for (int i = 0; i < contents.length; i++) {
 			contents[i] = all_projects[i];
 		}
 		folder.setRelated(property_contents,contents);
+		// 	存储更多项目文件夹数据	
+		more_projects = new TCComponent[project_more_num];
+		for (int i = 0; i < more_projects.length; i++) {
+			more_projects[i] = all_projects[i + project_defult_num];
+		}
+		project_more.setRelated(property_contents,more_projects);
 
 		for (int i = 0; i < more_projects.length; i++) {
 			refreshProjectFolder(all_projects[i]);
 		}
 				
+	}
+	
+	// 获取首选项值
+	public Integer getPreferenceIntegerValue(String preference_name, int defaultValue) throws TCException {
+		Integer value = preferenceService.getIntegerValue(preference_name);
+		if(value == null) {
+			preferenceService.setIntegerValueAtLocation(preference_name, defaultValue, TCPreferenceLocation.USER_LOCATION);
+			value = preferenceService.getIntegerValue(preference_name);
+		}
+		return value;
 	}
 	
 	// 刷新今天文件夹数据
@@ -374,37 +382,38 @@ public class TaskApprovalRecordUtil {
 	
 	// 刷新流程数据文件夹
 	public void refreshTasksFolder(TCComponentFolder folder, List<TCComponent> tasks) throws TCException {
-		Integer task_defult_num = preerenceService.getIntegerValue(TASK_DEFAULT_MUN);
-		if(task_defult_num == null){
-			task_defult_num = 3;
+		if(tasks == null || tasks.size() == 0) {
+			return;
 		}
-		Integer task_max_num = preerenceService.getIntegerValue(TASK_MAX_MUN);
-		if(task_max_num == null){
-			task_max_num = 10;
+		Integer task_defult_num = getPreferenceIntegerValue(TASK_DEFAULT_MUN, 3);
+		Integer task_more_num = getPreferenceIntegerValue(TASK_MORE_MUN, 10);
+		if(task_defult_num > tasks.size()) {
+			task_defult_num = tasks.size();
 		}
-		if (task_max_num > tasks.size()) {
-			task_max_num = tasks.size();
+		int all_task_num = tasks.size();
+		if(all_task_num > task_more_num + task_defult_num) {
+			all_task_num = task_more_num + task_defult_num;
 		}
-		if (task_max_num < task_defult_num) {
-			task_defult_num = task_max_num;
-		}
+		task_more_num = all_task_num - task_defult_num;
+		
 		TCComponent more = folder.getReferenceProperty(property_more);
 		if (more == null || !"更多".equals(more.getProperty(property_type))) {
 			more = createFolder(session, folderType, "更多", "更多", null);
 			more.setReferenceProperty(property_parent, folder);
 			folder.setReferenceProperty(property_more, more);
 		}
-		TCComponent[] tasks_more = new TCComponent[task_max_num - task_defult_num];
-		for (int i = 0; i < tasks_more.length; i++) {
-			tasks_more[i] = tasks.get(i + task_defult_num);
-		}
-		more.setRelated(property_contents, tasks_more);
 		
 		TCComponent[] contents = new TCComponent[task_defult_num];
 		for (int i = 0; i < contents.length; i++) {
 			contents[i] = tasks.get(i);
 		}
 		folder.setRelated(property_contents, contents);
+		
+		TCComponent[] tasks_more = new TCComponent[task_more_num];
+		for (int i = 0; i < tasks_more.length; i++) {
+			tasks_more[i] = tasks.get(i + task_defult_num);
+		}
+		more.setRelated(property_contents, tasks_more);
 	}
 	
 	// 刷新更多文件夹数据
