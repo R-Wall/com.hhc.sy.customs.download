@@ -20,9 +20,9 @@ import com.teamcenter.rac.kernel.TCException;
 import com.teamcenter.rac.kernel.TCPreferenceService;
 import com.teamcenter.rac.kernel.TCPreferenceService.TCPreferenceLocation;
 import com.teamcenter.rac.kernel.TCSession;
-import com.teamcenter.services.loose.core.DataManagementService;
-import com.teamcenter.services.loose.core._2008_06.DataManagement.CreateIn;
-import com.teamcenter.services.loose.core._2008_06.DataManagement.CreateResponse;
+import com.teamcenter.services.rac.core.DataManagementService;
+import com.teamcenter.services.rac.core._2008_06.DataManagement.CreateIn;
+import com.teamcenter.services.rac.core._2008_06.DataManagement.CreateResponse;
 
 /**
  * 刷新操作调用本方法执行流程审批记录逻辑
@@ -39,10 +39,11 @@ public class TaskApprovalRecordUtil {
 	String user_id;
 	String task_types = "EPMPerformSignoffTask;EPMDoTask;EPMConditionTask";
 	Calendar calendar = Calendar.getInstance();
-	public static String PROJECT_DEFAULT_MUN = "PROJECT_DEFAULT_MUN";
-	public static String PROJECT_MORE_MUN = "PROJECT_MORE_MUN";
-	public static String TASK_DEFAULT_MUN = "TASK_DEFAULT_MUN";
-	public static String TASK_MORE_MUN = "TASK_MORE_MUN";
+	String PROJECT_DEFAULT_MUN = "PROJECT_DEFAULT_MUN";
+	String PROJECT_MORE_MUN = "PROJECT_MORE_MUN";
+	String TASK_DEFAULT_MUN = "TASK_DEFAULT_MUN";
+	String TASK_MORE_MUN = "TASK_MORE_MUN";
+	String TASK_FOLDER_START_YEAR = "TASK_FOLDER_START_YEAR";
 	String property_folder = "sy6_task_folder"; // TypeReference/S7_CustomFolder
 	String folderType = "SY6_TaskFolder";
 	String property_type = "sy6_type"; // String 类型
@@ -83,7 +84,7 @@ public class TaskApprovalRecordUtil {
 		if (m_theTargets != null) {
 			refreshFolders(m_theTargets);
 		}
-		System.out.println("customRefresh Comptete.");
+		System.out.println("TaskFolder Refresh Comptete.");
 	}
 	
 	public void refreshTaskInbox(TCComponentTaskInBox taskInbox) throws TCException {
@@ -181,7 +182,10 @@ public class TaskApprovalRecordUtil {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
 		int endYear = calendar.get(Calendar.YEAR);
-		int startYear = 2016;
+		Integer startYear = preferenceService.getIntegerValue(TASK_FOLDER_START_YEAR);
+		if(startYear == null) {
+			startYear = 2016;
+		}
 		int years = endYear - startYear + 1;
 		if (years > 10) {
 			years = 10;
@@ -417,9 +421,9 @@ public class TaskApprovalRecordUtil {
 	
 	// 刷新更多文件夹数据
 	public void refreshMoreFolder(TCComponentFolder more) throws TCException {
-		TCComponent folder = more.getReferenceProperty(property_parent);
-		if (folder != null && folder instanceof TCComponentFolder) {
-			refreshFolder((TCComponentFolder) folder);
+		TCComponent[] folders = more.getReferenceListProperty(property_contents);
+		if (folders != null && folders.length != 0) {
+			refreshFolders(folders);
 		}
 	}
 	public void sysoutQueryInput(String[] enters, String[] values) {
@@ -502,7 +506,7 @@ public class TaskApprovalRecordUtil {
 	// 创建文件夹
 	public TCComponentFolder createFolder(TCSession session,String folderType, String folderName, String type, Integer year) throws TCException {
 		try {
-			DataManagementService dm = DataManagementService.getService(session.getSoaConnection());
+			DataManagementService dm = DataManagementService.getService(session);
 			CreateIn folderDef = new CreateIn();
 			folderDef.data.boName = folderType;
 			folderDef.data.stringProps.put("object_name", folderName);
